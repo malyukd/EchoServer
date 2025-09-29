@@ -8,8 +8,8 @@ add_executable(server
     server.cpp
     TCPacceptor.cpp
     TCPacceptor.h
-    StringHandler.cpp
-    StringHandler.h
+    MetricsCollector.h
+    MetricsCollector.cpp
 )
 
 target_link_libraries(server PRIVATE stream)

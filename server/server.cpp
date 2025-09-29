@@ -2,7 +2,28 @@
 #include <stdlib.h>
 #include <cstring>
 #include "TCPacceptor.h"
-#include "StringHandler.h"
+#include <thread>
+#include <iostream>
+#include "MetricsCollector.h"
+
+MetricsCollector g_metrics;
+bool program = true;
+
+void console_input() {
+    std::string line;
+    while (program) {  
+        if (std::getline(std::cin, line)) {
+            if (line == "metrics") {
+                  auto m = g_metrics.get_metrics();
+            std::cout << "RPS: " << m.rps
+                << ", MB/s: " << m.mbps
+                << ", Total: " << m.total_requests << "\n";
+            } else {
+                std::cout << "Ты ввёл: " << line << "\n";
+            }
+        }
+    }
+}
 
 int main(int argc, char** argv)
 {
@@ -10,6 +31,7 @@ int main(int argc, char** argv)
         printf("usage: server <port> [<ip>]\n");
         exit(1);
     }
+    std::thread t(console_input); 
     TCPStream* stream = NULL;
     TCPAcceptor* acceptor = NULL;
     if (argc == 3) {
@@ -18,7 +40,7 @@ int main(int argc, char** argv)
     else {
         acceptor = new TCPAcceptor(atoi(argv[1]));
     }
-    bool program = true;
+    
     if (acceptor->start() == 0) {
         while (program) {
             stream = acceptor->accept();
@@ -33,14 +55,10 @@ int main(int argc, char** argv)
                         program = false;
                         break;
                     }else{
-                        StringHandler str(line);
-                        if(str.isValid()){
-                            stream->send("Success", len);
-                            printf("Success");
-                        }else{
-                            stream->send(str.error,sizeof(str.error));
-                            printf("sent - %s\n",  str.error);
-                        }
+                        stream->send(line, len);
+                        g_metrics.record_request(len);
+                        printf("send - %s\n", line);
+
                     }
                     
                 }
@@ -48,5 +66,6 @@ int main(int argc, char** argv)
             }
         }
     }
+    t.join();
     exit(0);
 }

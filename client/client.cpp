@@ -23,7 +23,6 @@ int main(int argc, char** argv)
     while (message!="exit") {
         cin >> message;
         stream->send(message.c_str(), message.size());
-        printf("sent - %s\n", message.c_str());
         len = stream->receive(line, sizeof(line));
         line[len] = 0;
         printf("received - %s\n", line);
